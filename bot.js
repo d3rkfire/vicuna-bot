@@ -1,4 +1,5 @@
 require("dotenv").config()
+const http = require("http")
 const fs = require("fs")
 const responses = require("./responses.json")
 const roleRequestQueue = []
@@ -6,14 +7,6 @@ const roleRequestQueue = []
 if (!fs.existsSync("./roles")){
     fs.mkdirSync("./roles");
 }
-
-const Configuration = require("openai").Configuration
-const OpenAIApi = require("openai").OpenAIApi
-const config = new Configuration({
-    organization: process.env.OPENAI_ORGANIZATION,
-    apiKey: process.env.OPENAI_API_KEY
-})
-const openai = new OpenAIApi(config)
 
 const TelegramBot = require("node-telegram-bot-api")
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
@@ -72,15 +65,30 @@ bot.onText(/^[^\/].*/, (message, _) => {
             if (error) console.log(error)
             else role = data
             
-            openai.createChatCompletion({
-                model: process.env.OPENAI_MODEL,
-                messages: [
-                    {role: "system", content: role},
-                    {role: "user", content: message.text}
-                ]
-            }).then((completion) => {
-                bot.sendMessage(message.chat.id, completion.data.choices[0].message.content)
+            const promptRequest = JSON.stringify({
+                "prompt": "### Instruction:\n" + role + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n",
+                "max_new_tokens": 1024,
+                "temparature": 0.7,
+                "repetition_penalty": 1.2,
+                "min_length": 10,
+                "do_sample": true,
+                "stopping_strings": ["### Human:", "### Assistant:"]
             })
+
+            var response = ""
+            const req = http.request({
+                host: process.env.API_HOST,
+                port: process.env.API_PORT,
+                path: "/api/v1/generate",
+                method: "POST"
+            }, (res) => {
+                res.on("data", (chunk) => response += chunk)
+                res.on("end", () => {
+                    bot.sendMessage(message.chat.id, response)
+                })
+            })
+            req.write(promptRequest)
+            req.end()
         })
     }
 })
