@@ -1,0 +1,13 @@
+{
+    "en": {
+        "setrole": {
+            "describe": "Please describe how you want me to act.\nEg: You are an economics expert that will assist me in writing a thesis.",
+            "fail": "Sorry! There seems to be an issue. Please try again later.",
+            "success": "Got it! From now on, I will act according to the following description: "
+        },
+        "resetrole": {
+            "fail": "Sorry! There seems to be an issue. Please try again later.",
+            "success": "Got it! From now on, I will act according to my default behavior."
+        }
+    }
+}
