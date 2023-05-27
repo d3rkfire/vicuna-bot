@@ -80,11 +80,16 @@ bot.onText(/^[^\/].*/, (message, _) => {
                 host: process.env.API_HOST,
                 port: process.env.API_PORT,
                 path: "/api/v1/generate",
-                method: "POST"
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Content-Length": Buffer.byteLength(promptRequest)
+                }
             }, (res) => {
                 res.on("data", (chunk) => response += chunk)
                 res.on("end", () => {
-                    bot.sendMessage(message.chat.id, response)
+                    const jsonResponse = JSON.parse(response)
+                    bot.sendMessage(message.chat.id, jsonResponse.results[0].text)
                 })
             })
             req.write(promptRequest)
