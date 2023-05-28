@@ -72,6 +72,7 @@ bot.onText(/^[^\/].*/, (message, _) => {
                 "repetition_penalty": 1.2,
                 "min_length": 10,
                 "do_sample": true,
+                "add_bos_token": false,
                 "stopping_strings": ["### Human:", "### Assistant:"]
             })
 
