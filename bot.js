@@ -62,7 +62,10 @@ bot.onText(/^[^\/].*/, (message, _) => {
         // Chat did not request /setrole
         fs.readFile(roleFilepath, "utf-8", (error, data) => {
             var role = process.env.DEFAULT_ROLE
-            if (error) console.log(error)
+            if (error) {
+                console.log(error)
+                fs.writeFile(roleFilepath, process.env.DEFAULT_ROLE, () => {})
+            }
             else role = data
             
             const promptRequest = JSON.stringify({
