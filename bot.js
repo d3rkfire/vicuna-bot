@@ -76,6 +76,7 @@ bot.onText(/^\/clearcontext/, (message, _) => {
 // Regular Messages
 bot.onText(/^[^\/].*/, (message, _) => {
     const roleFilepath = "./roles/" + message.chat.id
+    const contextFilepath = "./contexts/" + message.chat.id
 
     // Check if chat is requesting /setrole
     if (roleRequestQueue.indexOf(message.chat.id) != -1) {
@@ -94,6 +95,7 @@ bot.onText(/^[^\/].*/, (message, _) => {
     } else {
         // Chat did not request /setrole
         fs.readFile(roleFilepath, "utf-8", (error, data) => {
+            // Use retrieved response
             var role = process.env.DEFAULT_ROLE
             if (error) {
                 console.log(error)
@@ -101,8 +103,15 @@ bot.onText(/^[^\/].*/, (message, _) => {
             }
             else role = data
             
+            var prompt = "### Instruction:\n" + role + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n"
+            // Retrieve context
+            try {
+                const context = fs.readFileSync(contextFilepath, "utf-8")
+                prompt = "### Instruction:\n" + role + " You will be answering based on the context below.\n\n### Context:\n" + context + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n"
+            } catch (contextError) {}
+
             const promptRequest = JSON.stringify({
-                "prompt": "### Instruction:\n" + role + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n",
+                "prompt": prompt,
                 "max_new_tokens": 2048,
                 "temparature": 0.7,
                 "repetition_penalty": 1.2,
