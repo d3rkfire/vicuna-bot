@@ -107,7 +107,7 @@ bot.onText(/^[^\/].*/, (message, _) => {
             // Retrieve context
             try {
                 const context = fs.readFileSync(contextFilepath, "utf-8")
-                prompt = "### Instruction:\n" + role + " You will be answering based on the context below.\n\n### Context:\n" + context + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n"
+                prompt = "### Instruction:\n" + role + "\n\n### Context:\n" + context + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n"
             } catch (contextError) {}
 
             const promptRequest = JSON.stringify({
