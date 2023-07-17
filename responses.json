@@ -8,6 +8,19 @@
         "resetrole": {
             "fail": "Sorry! There seems to be an issue. Please try again later.",
             "success": "Got it! From now on, I will act according to my default behavior."
+        },
+        "setcontext": {
+            "fail": "Sorry! There seems to be an issue. Please try again later.",
+            "nottxt": "Sorry! Only text file (.txt) is accepted.",
+            "success": "Got it! From now on, I will be answering based on this context file you have sent.\nNote: Answering with context will be slow. Please remove it when you are done."
+        },
+        "showcontext": {
+            "fail": "Sorry! It seems that you have not given me a context yet. Please send me a text file (.txt).\nNote: Answering with context will be slow. Please remove it when you are done.",
+            "success": "Below is the context file you have sent me:"
+        },
+        "clearcontext": {
+            "fail": "Sorry! There seems to be an issue. Please try again later.",
+            "success": "Got it! From now on, I will be answering based on general knowledge."
         }
     }
 }

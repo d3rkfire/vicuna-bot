@@ -8,7 +8,12 @@ if (!fs.existsSync("./roles")){
     fs.mkdirSync("./roles");
 }
 
+if (!fs.existsSync("./contexts")){
+    fs.mkdirSync("./contexts");
+}
+
 const TelegramBot = require("node-telegram-bot-api")
+const { isObject } = require("util")
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
 
 // Set Role
@@ -23,6 +28,48 @@ bot.onText(/^\/resetrole/, (message, _) => {
     fs.unlink(roleFilepath, (error) => {
         if (error) console.log(error)
         bot.sendMessage(message.chat.id, responses.en.resetrole.success)
+    })
+})
+
+// Receive Context File (.txt)
+bot.on("document", (message, _) => {
+    if (message.document.mime_type != "text/plain") {
+        bot.sendMessage(message.chat.id, responses.en.setcontext.nottxt)
+    } else {
+        bot.downloadFile(message.document.file_id, "./contexts").then(
+            (tmpFilepath) => {
+                const contextFilepath = "./contexts/" + message.chat.id
+                fs.renameSync(tmpFilepath, contextFilepath)
+                bot.sendMessage(message.chat.id, responses.en.setcontext.success)
+            },
+            (reason) => { console.log(reason) }
+        )
+    }
+})
+
+// Show Context File (.txt)
+bot.onText(/^\/showcontext/, (message, _) => {
+    const contextFilepath = "./contexts/" + message.chat.id
+    fs.readFile(contextFilepath, "utf-8", (error, data) => {
+        if (error) {
+            console.log(error)
+            bot.sendMessage(message.chat.id, responses.en.showcontext.fail)
+        }
+        else {
+            var contextResponse = responses.en.showcontext.success
+            if (data.length <= 4000) contextResponse += "\n" + data
+            else contextResponse += "\n" + data.substring(0, 1000) + "\n.\n.\n.\n" + data.substring(data.length - 1000, data.length)
+            bot.sendMessage(message.chat.id, contextResponse)
+        }
+    })
+})
+
+// Remove Context File (.txt)
+bot.onText(/^\/clearcontext/, (message, _) => {
+    const contextFilepath = "./contexts/" + message.chat.id
+    fs.unlink(contextFilepath, (error) => {
+        if (error) console.log(error)
+        bot.sendMessage(message.chat.id, responses.en.clearcontext.success)
     })
 })
 
