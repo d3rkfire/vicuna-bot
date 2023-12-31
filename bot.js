@@ -125,7 +125,7 @@ bot.onText(/^[^\/].*/, (message, _) => {
             const req = http.request({
                 host: process.env.API_HOST,
                 port: process.env.API_PORT,
-                path: "/api/v1/generate",
+                path: "/v1/completions",
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -135,7 +135,8 @@ bot.onText(/^[^\/].*/, (message, _) => {
                 res.on("data", (chunk) => response += chunk)
                 res.on("end", () => {
                     const jsonResponse = JSON.parse(response)
-                    bot.sendMessage(message.chat.id, jsonResponse.results[0].text)
+                    console.log(jsonResponse)
+                    bot.sendMessage(message.chat.id, jsonResponse.choices[0].text)
                 })
             })
             req.write(promptRequest)
