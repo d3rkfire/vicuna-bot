@@ -3,6 +3,7 @@ const http = require("http")
 const fs = require("fs")
 const responses = require("./responses.json")
 const roleRequestQueue = []
+const history = {}
 
 if (!fs.existsSync("./roles")){
     fs.mkdirSync("./roles");
@@ -12,8 +13,11 @@ if (!fs.existsSync("./contexts")){
     fs.mkdirSync("./contexts");
 }
 
+if (!fs.existsSync("./histories")){
+    fs.mkdirSync("./histories");
+}
+
 const TelegramBot = require("node-telegram-bot-api")
-const { isObject } = require("util")
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
 
 // Set Role
@@ -57,8 +61,8 @@ bot.onText(/^\/showcontext/, (message, _) => {
         }
         else {
             var contextResponse = responses.en.showcontext.success
-            if (data.length <= 4000) contextResponse += "\n" + data
-            else contextResponse += "\n" + data.substring(0, 1000) + "\n.\n.\n.\n" + data.substring(data.length - 1000, data.length)
+            if (data.length <= 4096) contextResponse += "\n" + data
+            else contextResponse += "\n" + data.substring(0, 1024) + "\n.\n.\n.\n" + data.substring(data.length - 1024, data.length)
             bot.sendMessage(message.chat.id, contextResponse)
         }
     })
@@ -103,22 +107,29 @@ bot.onText(/^[^\/].*/, (message, _) => {
             }
             else role = data
             
-            var prompt = "### Instruction:\n" + role + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n"
+            var prompt = "### Instruction:\n" + role
             // Retrieve context
             try {
                 const context = fs.readFileSync(contextFilepath, "utf-8")
-                prompt = "### Instruction:\n" + role + "\n\n### Context:\n" + context + "\n\n### Human:\n" + message.text + "\n\n### Assistant:\n"
+                prompt = "### Instruction:\n" + role + "\n\n### Context:\n" + context
             } catch (contextError) {}
 
+            // History management
+            addHistory(message.chat.id, "\n\n### HUMAN:\n" + message.text)
+            prompt += getHistory(message.chat.id)
+            
+            // Mark where AI needs to respond
+            prompt += "\n\n### Assistant:\n"
             const promptRequest = JSON.stringify({
                 "prompt": prompt,
-                "max_new_tokens": 2048,
-                "temparature": 0.7,
-                "repetition_penalty": 1.2,
-                "min_length": 10,
+                "temparature": 0.9,
+                "repetition_penalty": 1.1,
                 "do_sample": true,
-                "add_bos_token": false,
-                "stopping_strings": ["### Human:", "### Assistant:"]
+                // "ban_eos_token": true,
+                "min_length": 16,
+                "truncation_length": 4096,
+                "max_tokens": 1024,
+                "stop": ["### Human:", "### Assistant:", "HUMAN:"]
             })
 
             var response = ""
@@ -135,7 +146,7 @@ bot.onText(/^[^\/].*/, (message, _) => {
                 res.on("data", (chunk) => response += chunk)
                 res.on("end", () => {
                     const jsonResponse = JSON.parse(response)
-                    console.log(jsonResponse)
+                    addHistory(message.chat.id, "\n\n### Assistant:\n" + jsonResponse.choices[0].text)
                     bot.sendMessage(message.chat.id, jsonResponse.choices[0].text)
                 })
             })
@@ -144,3 +155,16 @@ bot.onText(/^[^\/].*/, (message, _) => {
         })
     }
 })
+
+// Helper Functions
+function addHistory(chatId, content) {
+    if (!history.hasOwnProperty(chatId)) history[chatId]=[]
+    if (history[chatId].length >= process.env.HISTORY_LIMIT) history[chatId].shift()
+    history[chatId].push(content)
+}
+
+function getHistory(chatId) {
+    var response=""
+    history[chatId].forEach((historyMessage) => response += historyMessage)
+    return response
+}
