@@ -129,7 +129,7 @@ bot.onText(/^[^\/].*/, (message, _) => {
                 "min_length": 16,
                 "truncation_length": 4096,
                 "max_tokens": 1024,
-                "stop": ["### Human:", "### Assistant:", "HUMAN:"]
+                "stop": ["### Human:", "### Assistant:", "HUMAN:", "###"]
             })
 
             var response = ""
